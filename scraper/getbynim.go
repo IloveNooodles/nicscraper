@@ -3,15 +3,16 @@ package scraper
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"strings"
+
+	"github.com/pkg/errors"
 
 	"github.com/anaskhan96/soup"
 	"github.com/mkamadeus/nicscraper/models"
 )
 
-func (s Scraper) GetByNIM(nim string) {
+func (s Scraper) GetByNIM(nim string) (*models.Student, error) {
 
 	// CSRF token, can be anything.
 	const csrfToken string = "banana"
@@ -26,8 +27,7 @@ func (s Scraper) GetByNIM(nim string) {
 	)
 
 	if err != nil {
-		s.Failed <- nim
-		return
+		return &models.Student{}, errors.Wrap(err, "Failed to make new request")
 	}
 
 	// Set headers
@@ -37,22 +37,24 @@ func (s Scraper) GetByNIM(nim string) {
 	// Do request
 	response, err := client.Do(request)
 	if err != nil {
-		s.Failed <- nim
-		return
+		return &models.Student{}, errors.Wrap(err, "Failed to do POST request")
 	}
 
 	// Read HTML body
 	data, err := ioutil.ReadAll(response.Body)
 	if err != nil {
-		s.Failed <- nim
-		return
+		return &models.Student{}, errors.Wrap(err, "Failed to do read response body")
 	}
 
 	// Parse HTML and get all required data
 	document := soup.HTMLParse(string(data))
 	inputs := document.FindAll("input", "class", "form-control")
 
-	ids := strings.Split(inputs[2].Attrs()["placeholder"], ",")
+	if len(inputs) != 10 {
+		return &models.Student{}, errors.New("Possibly invalid student/NIM")
+	}
+
+	ids := strings.Split(inputs[2].Attrs()["placeholder"], ", ")
 	facultyID := ids[0]
 
 	majorID := ""
@@ -64,6 +66,7 @@ func (s Scraper) GetByNIM(nim string) {
 	email = strings.ReplaceAll(email, "(at)", "@")
 	email = strings.ReplaceAll(email, "(dot)", ".")
 	email = strings.ToLower(email)
+	email = strings.TrimSpace(email)
 
 	student := &models.Student{
 		Username:  inputs[1].Attrs()["placeholder"],
@@ -73,8 +76,6 @@ func (s Scraper) GetByNIM(nim string) {
 		Email:     email,
 	}
 
-	log.Printf("Scraped %s", nim)
-
 	// Input to channel
-	s.Students <- student
+	return student, nil
 }
