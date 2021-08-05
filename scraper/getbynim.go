@@ -27,23 +27,28 @@ func (s Scraper) GetByNIM(nim string) (*models.Student, error) {
 	)
 
 	if err != nil {
-		return &models.Student{}, errors.Wrap(err, "Failed to make new request")
+		return nil, errors.Wrap(err, "failed to make new request")
 	}
 
 	// Set headers
 	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	request.Header.Set("Cookie", fmt.Sprintf("ci_session=%s;ITBnic=%s", s.Token, csrfToken))
+	request.Header.Set("Cookie", fmt.Sprintf("ci_session=%s;ITBnic=%s", s.Args.Token, csrfToken))
 
 	// Do request
-	response, err := client.Do(request)
-	if err != nil {
-		return &models.Student{}, errors.Wrap(err, "Failed to do POST request")
+	var response *http.Response
+
+	response, err = client.Do(request)
+	for err != nil || response.StatusCode >= 500 {
+		response, err = client.Do(request)
 	}
+	// if err != nil {
+	// 	return nil, errors.New(fmt.Sprintf("failed to do POST request with status %d", response.StatusCode))
+	// }
 
 	// Read HTML body
 	data, err := ioutil.ReadAll(response.Body)
 	if err != nil {
-		return &models.Student{}, errors.Wrap(err, "Failed to do read response body")
+		return nil, errors.Wrap(err, "failed to do read response body")
 	}
 
 	// Parse HTML and get all required data
@@ -51,7 +56,7 @@ func (s Scraper) GetByNIM(nim string) (*models.Student, error) {
 	inputs := document.FindAll("input", "class", "form-control")
 
 	if len(inputs) != 10 {
-		return &models.Student{}, errors.New("Possibly invalid student/NIM")
+		return nil, errors.New("possibly invalid student/NIM")
 	}
 
 	ids := strings.Split(inputs[2].Attrs()["placeholder"], ", ")
