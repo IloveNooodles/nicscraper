@@ -41,9 +41,6 @@ func (s Scraper) GetByNIM(nim string) (models.Student, error) {
 	for err != nil || response.StatusCode >= 500 {
 		response, err = client.Do(request)
 	}
-	// if err != nil {
-	// 	return nil, errors.New(fmt.Sprintf("failed to do POST request with status %d", response.StatusCode))
-	// }
 
 	// Read HTML body
 	data, err := ioutil.ReadAll(response.Body)

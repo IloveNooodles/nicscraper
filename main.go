@@ -1,22 +1,23 @@
 package main
 
 import (
-	"fmt"
 	"time"
 
-	"github.com/mkamadeus/nicscraper/cli"
+	"github.com/alexflint/go-arg"
+	"github.com/mkamadeus/nicscraper/models"
 	"github.com/mkamadeus/nicscraper/scraper"
 	"github.com/mkamadeus/nicscraper/utils/file"
 	"github.com/sirupsen/logrus"
 )
 
 func main() {
-	app := cli.New()
-	args, err := app.Setup()
-	if err != nil {
-		fmt.Println(app.Parser.Usage(err))
-		return
+	var args models.Arguments
+	arg.MustParse(&args)
+
+	if args.Verbose {
+		logrus.SetLevel(logrus.DebugLevel)
 	}
+	logrus.Debugln(args)
 
 	// Setup timer
 	start := time.Now()

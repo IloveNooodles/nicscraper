@@ -15,51 +15,68 @@ type Progress struct {
 	limit int
 }
 
-const CHUNK_SIZE int = 50
+const CHUNK_SIZE int = 20
+const SKIP_THRESHOLD int = 5
 
 func (s Scraper) Start() {
-	progress := Progress{count: 0, limit: s.Args.Limit * len(s.Args.Years) * len(s.Args.Prefixes)}
-	for _, prefix := range s.Args.Prefixes {
-		for _, year := range s.Args.Years {
+	progress := Progress{count: 0, limit: s.Args.Limit * len(s.Args.Years.Arr) * len(s.Args.Prefixes.Arr)}
+
+	for _, prefix := range s.Args.Prefixes.Arr {
+		for _, year := range s.Args.Years.Arr {
+
 			nimPrefix := fmt.Sprintf("%s%s", prefix, year)
-			for i := 0; i <= s.Args.Limit/CHUNK_SIZE; i++ {
+
+			// Split goroutines into chunks
+			chunkCount := int(math.Ceil(float64(s.Args.Limit) / float64(CHUNK_SIZE)))
+			logrus.Debugf("chunkcount: %d %s%s", chunkCount, prefix, year)
+
+			for i := 0; i < chunkCount; i++ {
 				go func(offset int, prefix string) {
-					batasAtas := int(math.Min((float64(offset)+1)*float64(CHUNK_SIZE), float64(s.Args.Limit)))
-					start := (offset * CHUNK_SIZE) + 1
+					lb := (offset * CHUNK_SIZE) + 1
+					ub := ((offset + 1) * CHUNK_SIZE)
+					if ub > s.Args.Limit {
+						ub = s.Args.Limit
+					}
+
 					isSkipping := false
 					notFoundStreak := 0
-					if start <= batasAtas {
-						for each := start; each <= batasAtas; each++ {
-							nim := fmt.Sprintf("%s%03d", prefix, each)
-							if isSkipping {
-								s.Failed <- nim
-								continue
-							}
 
-							student, err := s.GetByNIM(nim)
-							logrus.Debugf("Student: %s Error: %s", student, err)
-							if err != nil {
-								logrus.Warnf("Failed to fetch %s, reason: %s", nim, err)
-								s.Failed <- nim
-								notFoundStreak++
-								if notFoundStreak > 5 {
-									isSkipping = true
-									logrus.Warnf("Skipping %s - %s", nim, fmt.Sprintf("%s%03d", prefix, batasAtas))
-								}
-								continue
-							}
-							notFoundStreak = 0
-							s.Students <- student
+					for suffix := lb; suffix <= ub; suffix++ {
+						nim := fmt.Sprintf("%s%03d", prefix, suffix)
+
+						// If skippable (more than SKIP_THRESHOLD)
+						if isSkipping {
+							s.Failed <- nim
+							continue
 						}
-						logrus.Infof("Fetched %s - %s", fmt.Sprintf("%s%03d", prefix, start), fmt.Sprintf("%s%03d", prefix, batasAtas))
-						progress.m.Lock()
-						progress.count += batasAtas - start + 1
-						progress.m.Unlock()
+
+						student, err := s.GetByNIM(nim)
+						logrus.Debugf("stud: %s err: %s", student, err)
+
+						if err != nil {
+							logrus.Warnf("Failed to fetch %s, reason: %s", nim, err)
+							s.Failed <- nim
+
+							notFoundStreak++
+							if notFoundStreak > SKIP_THRESHOLD {
+								isSkipping = true
+								logrus.Warnf("Skipping %s - %s", nim, fmt.Sprintf("%s%03d", prefix, ub))
+							}
+							continue
+						}
+						notFoundStreak = 0
+						s.Students <- student
 					}
+
+					logrus.Infof("Fetched %s - %s", fmt.Sprintf("%s%03d", prefix, lb), fmt.Sprintf("%s%03d", prefix, ub))
+					progress.m.Lock()
+					progress.count += ub - lb + 1
+					progress.m.Unlock()
 				}(i, nimPrefix)
 			}
 		}
 	}
+
 	go func() {
 		lastProgress := float64(0)
 		for {

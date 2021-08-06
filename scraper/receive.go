@@ -8,7 +8,8 @@ import (
 )
 
 func (s Scraper) Receive() ([]models.Student, []string) {
-	size := len(s.Args.Prefixes) * len(s.Args.Years) * s.Args.Limit
+	size := len(s.Args.Prefixes.Arr) * len(s.Args.Years.Arr) * s.Args.Limit
+
 	result := make([]models.Student, 0)
 	failed := make([]string, 0)
 
@@ -20,10 +21,18 @@ func (s Scraper) Receive() ([]models.Student, []string) {
 			logrus.Debugf("Received student: %s", student)
 			result = append(result, student)
 		case err := <-s.Failed:
-			logrus.Debugf("Received failed: %s", err)
+			logrus.Debugf("Received err: %s", err)
 			failed = append(failed, err)
 		}
 	}
+
+	// for r := range resultChannel {
+	// 	result = append(result, r)
+	// }
+
+	// for f := range failedChannel {
+	// 	failed = append(failed, f)
+	// }
 
 	// Sort output
 	sort.Slice(result[:], func(i, j int) bool {

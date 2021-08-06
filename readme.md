@@ -58,3 +58,9 @@ To run using Docker:
 docker build -t nicscraper:latest .
 docker run nicscraper -p 135 -y 18 --token <your-token-here>
 ```
+
+## Contributors
+
+<a href="https://github.com/mkamadeus/nicscraper/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=mkamadeus/nicscraper" />
+</a>
