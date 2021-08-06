@@ -12,7 +12,7 @@ import (
 	"github.com/mkamadeus/nicscraper/models"
 )
 
-func (s Scraper) GetByNIM(nim string) (*models.Student, error) {
+func (s Scraper) GetByNIM(nim string) (models.Student, error) {
 
 	// CSRF token, can be anything.
 	const csrfToken string = "banana"
@@ -27,7 +27,7 @@ func (s Scraper) GetByNIM(nim string) (*models.Student, error) {
 	)
 
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to make new request")
+		return models.Student{}, errors.Wrap(err, "failed to make new request")
 	}
 
 	// Set headers
@@ -48,7 +48,7 @@ func (s Scraper) GetByNIM(nim string) (*models.Student, error) {
 	// Read HTML body
 	data, err := ioutil.ReadAll(response.Body)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to do read response body")
+		return models.Student{}, errors.Wrap(err, "failed to do read response body")
 	}
 
 	// Parse HTML and get all required data
@@ -56,7 +56,7 @@ func (s Scraper) GetByNIM(nim string) (*models.Student, error) {
 	inputs := document.FindAll("input", "class", "form-control")
 
 	if len(inputs) != 10 {
-		return nil, errors.New("possibly invalid student/NIM")
+		return models.Student{}, errors.New("possibly invalid student/NIM")
 	}
 
 	ids := strings.Split(inputs[2].Attrs()["placeholder"], ", ")
@@ -73,7 +73,7 @@ func (s Scraper) GetByNIM(nim string) (*models.Student, error) {
 	email = strings.ToLower(email)
 	email = strings.TrimSpace(email)
 
-	student := &models.Student{
+	student := models.Student{
 		Username:  inputs[1].Attrs()["placeholder"],
 		Name:      inputs[3].Attrs()["placeholder"],
 		FacultyID: facultyID,
