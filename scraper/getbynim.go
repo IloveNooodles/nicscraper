@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"net/http/httputil"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -91,6 +90,8 @@ func (s Scraper) GetByNIMTeams(nim string, cvid string) (models.Student, error) 
 
 	/* Body */
 	query := map[string]string{"QueryString": nim, "DisplayQueryString": nim}
+
+	/* FIXME: Maybe create the struct for the option */
 	fieldsToFetch := [...]string{
 		"Id",
 		"DisplayName",
@@ -99,10 +100,10 @@ func (s Scraper) GetByNIMTeams(nim string, cvid string) (models.Student, error) 
 		"ImAddress",
 		"UserPrincipalName",
 		"ExternalDirectoryObjectId",
-		"Phones",
 		"MRI",
 	}
 
+	/* FIXME: Maybe create the struct for the request object :D */
 	entityRequests := map[string]interface{}{"Query": query, "EntityType": "People", "Fields": fieldsToFetch}
 	body := map[string]interface{}{"EntityRequests": [...]interface{}{entityRequests}, "Cvid": cvid}
 
@@ -127,14 +128,6 @@ func (s Scraper) GetByNIMTeams(nim string, cvid string) (models.Student, error) 
 	request.Header.Set("Authorization", fmt.Sprintf("Bearer %s", s.Args.Token))
 	request.Header.Set("x-client-flights", "enableAutosuggestTopHits,enableAutosuggestTopHitChannels,EnableSelfSuggestion")
 
-	reqDump, err := httputil.DumpRequestOut(request, true)
-	if err != nil {
-		// log.Fatal(err)
-		panic(err)
-	}
-
-	fmt.Printf("REQUEST:\n%s\n", string(reqDump))
-
 	/* Making request */
 	var response *http.Response
 
@@ -145,12 +138,72 @@ func (s Scraper) GetByNIMTeams(nim string, cvid string) (models.Student, error) 
 
 	defer request.Body.Close()
 
-	/* Format data */
+	/* TODO If you want to get faculty code need to do another request :/, Major needs mapping */
+	/* Format data
+			{
+	  Groups: [
+	    {
+	      Suggestions: [
+	        {
+	          Id: "737519ec-3b0e-4350-9cfd-d32a4434d5f1@db6e1183-4c65-405c-82ce-7cd53fa6e9dc",
+	          DisplayName: "Muhammad Garebaldhie Er Rahman",
+	          EmailAddresses: ["13520029@mahasiswa.itb.ac.id"],
+	          Phones: [
+	            {
+	              Number: "2500935",
+	              Type: "Business",
+	            },
+	            {
+	              Number: "82216612992",
+	              Type: "Mobile",
+	            },
+	          ],
+	          JobTitle: "Mahasiswa",
+	          ImAddress: "sip:13520029@mahasiswa.itb.ac.id",
+	          MRI: "8:orgid:737519ec-3b0e-4350-9cfd-d32a4434d5f1",
+	          UserPrincipalName: "13520029@mahasiswa.itb.ac.id",
+	          ExternalDirectoryObjectId: "737519ec-3b0e-4350-9cfd-d32a4434d5f1",
+	          Text: "Muhammad Garebaldhie Er Rahman",
+	          QueryText: "13520029@mahasiswa.itb.ac.id",
+	          PropertyHits: ["EmailAddresses"],
+	          ReferenceId: "f96e7bd4-89ea-e492-ab4e-9bd03718ffc5.2000.1",
+	        },
+	      ],
+	      Type: "People",
+	    },
+	  ],
+	  Instrumentation: {
+	    TraceId: "f96e7bd4-89ea-e492-ab4e-9bd03718ffc5",
+	  },
+	}
+		}
+	*/
+
 	data, err := ioutil.ReadAll(response.Body)
+
 	if err != nil {
 		return models.Student{}, errors.Wrap(err, "Failed to parse response")
 	}
-	fmt.Println(string(data))
 
-	return models.Student{}, errors.Wrap(err, "failed to do create request body")
+	var dataJson models.TeamsResponse
+
+	if err := json.Unmarshal(data, &dataJson); err != nil {
+		return models.Student{}, errors.Wrap(err, "Failed to parse response")
+	}
+
+	if len(dataJson.Groups[0].Suggestions) <= 0 {
+		return models.Student{}, errors.Wrap(err, "possibly invalid student/NIM")
+	}
+
+	person := dataJson.Groups[0].Suggestions[0]
+
+	student := models.Student{
+		Username:  person.DisplayName,
+		Name:      person.DisplayName,
+		FacultyID: "placeholder",
+		MajorID:   nim,
+		Email:     person.ImAddress,
+	}
+
+	return student, nil
 }

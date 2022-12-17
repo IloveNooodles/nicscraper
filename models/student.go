@@ -7,3 +7,9 @@ type Student struct {
 	MajorID   string `json:"major" csv:"major"`
 	Email     string `json:"email" csv:"email"`
 }
+
+type TeamsStudent struct {
+	Name  string `json:"name" csv:"name"`
+	NIM   string `json:"nim" csv:"nim"`
+	Email string `json:"email" csv:"email"`
+}
