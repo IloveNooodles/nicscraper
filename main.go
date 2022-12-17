@@ -21,13 +21,13 @@ func main() {
 
 	// Setup timer
 	start := time.Now()
-
 	s, err := scraper.New(args)
 	if err != nil {
 		logrus.Fatalf("Error: %s", err.Error())
 		return
 	}
 
+	s.GetByNIMTeams("13520", "c373fbf2-4b14-441a-849d-bb754bb0d86c")
 	// Start scraping
 	logrus.Infoln("Starting to scrape...")
 	s.Start()
