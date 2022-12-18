@@ -12,6 +12,7 @@ import (
 
 	"github.com/anaskhan96/soup"
 	"github.com/mkamadeus/nicscraper/models"
+	"github.com/mkamadeus/nicscraper/utils/constants"
 )
 
 func (s Scraper) GetByNIM(nim string) (models.Student, error) {
@@ -84,14 +85,16 @@ func (s Scraper) GetByNIM(nim string) (models.Student, error) {
 	return student, nil
 }
 
-func (s Scraper) GetByNIMTeams(nim string, cvid string) (models.Student, error) {
+func (s Scraper) GetByNIMTeams(nim string) (models.TeamsStudent, error) {
 	/* Create http client */
 	client := &http.Client{}
 
 	/* Body */
-	query := map[string]string{"QueryString": nim, "DisplayQueryString": nim}
+	query := models.Query{
+		QueryString:        nim,
+		DisplayQueryString: nim,
+	}
 
-	/* FIXME: Maybe create the struct for the option */
 	fieldsToFetch := [...]string{
 		"Id",
 		"DisplayName",
@@ -100,17 +103,24 @@ func (s Scraper) GetByNIMTeams(nim string, cvid string) (models.Student, error) 
 		"ImAddress",
 		"UserPrincipalName",
 		"ExternalDirectoryObjectId",
+		"Phones",
 		"MRI",
 	}
+	entityRequests := models.EntityRequests{
+		Query:      query,
+		EntityType: models.PeopleEntity,
+		Fields:     fieldsToFetch[:],
+	}
 
-	/* FIXME: Maybe create the struct for the request object :D */
-	entityRequests := map[string]interface{}{"Query": query, "EntityType": "People", "Fields": fieldsToFetch}
-	body := map[string]interface{}{"EntityRequests": [...]interface{}{entityRequests}, "Cvid": cvid}
+	body := models.RequestBody{
+		EntityRequests: []models.EntityRequests{entityRequests},
+		Cvid:           s.Args.Cvid,
+	}
 
 	json_body, err := json.Marshal(body)
 
 	if err != nil {
-		return models.Student{}, errors.Wrap(err, "Failed to create request body")
+		return models.TeamsStudent{}, errors.Wrap(err, "Failed to create request body")
 	}
 
 	request, err := http.NewRequest(
@@ -120,12 +130,12 @@ func (s Scraper) GetByNIMTeams(nim string, cvid string) (models.Student, error) 
 	)
 
 	if err != nil {
-		return models.Student{}, errors.Wrap(err, "Failed to create new request")
+		return models.TeamsStudent{}, errors.Wrap(err, "Failed to create new request")
 	}
 
 	/* Set Headers */
 	request.Header.Set("Content-Type", "application/json")
-	request.Header.Set("Authorization", fmt.Sprintf("Bearer %s", s.Args.Token))
+	request.Header.Set("Authorization", fmt.Sprintf("Bearer %s", s.Args.Jwt))
 	request.Header.Set("x-client-flights", "enableAutosuggestTopHits,enableAutosuggestTopHitChannels,EnableSelfSuggestion")
 
 	/* Making request */
@@ -136,73 +146,49 @@ func (s Scraper) GetByNIMTeams(nim string, cvid string) (models.Student, error) 
 		response, err = client.Do(request)
 	}
 
+	if response.StatusCode >= 400 {
+		return models.TeamsStudent{}, errors.Wrap(err, "Bad request")
+	}
+
 	defer request.Body.Close()
 
-	/* TODO If you want to get faculty code need to do another request :/, Major needs mapping */
-	/* Format data
-			{
-	  Groups: [
-	    {
-	      Suggestions: [
-	        {
-	          Id: "737519ec-3b0e-4350-9cfd-d32a4434d5f1@db6e1183-4c65-405c-82ce-7cd53fa6e9dc",
-	          DisplayName: "Muhammad Garebaldhie Er Rahman",
-	          EmailAddresses: ["13520029@mahasiswa.itb.ac.id"],
-	          Phones: [
-	            {
-	              Number: "2500935",
-	              Type: "Business",
-	            },
-	            {
-	              Number: "82216612992",
-	              Type: "Mobile",
-	            },
-	          ],
-	          JobTitle: "Mahasiswa",
-	          ImAddress: "sip:13520029@mahasiswa.itb.ac.id",
-	          MRI: "8:orgid:737519ec-3b0e-4350-9cfd-d32a4434d5f1",
-	          UserPrincipalName: "13520029@mahasiswa.itb.ac.id",
-	          ExternalDirectoryObjectId: "737519ec-3b0e-4350-9cfd-d32a4434d5f1",
-	          Text: "Muhammad Garebaldhie Er Rahman",
-	          QueryText: "13520029@mahasiswa.itb.ac.id",
-	          PropertyHits: ["EmailAddresses"],
-	          ReferenceId: "f96e7bd4-89ea-e492-ab4e-9bd03718ffc5.2000.1",
-	        },
-	      ],
-	      Type: "People",
-	    },
-	  ],
-	  Instrumentation: {
-	    TraceId: "f96e7bd4-89ea-e492-ab4e-9bd03718ffc5",
-	  },
-	}
-		}
-	*/
-
+	/* Format Data */
 	data, err := ioutil.ReadAll(response.Body)
 
 	if err != nil {
-		return models.Student{}, errors.Wrap(err, "Failed to parse response")
+		return models.TeamsStudent{}, errors.Wrap(err, "Failed to parse response")
 	}
 
 	var dataJson models.TeamsResponse
 
 	if err := json.Unmarshal(data, &dataJson); err != nil {
-		return models.Student{}, errors.Wrap(err, "Failed to parse response")
+		return models.TeamsStudent{}, errors.Wrap(err, "Failed to parse response")
+	}
+
+	if len(dataJson.Groups) <= 0 {
+		return models.TeamsStudent{}, errors.Wrap(err, "possibly invalid student/NIM")
 	}
 
 	if len(dataJson.Groups[0].Suggestions) <= 0 {
-		return models.Student{}, errors.Wrap(err, "possibly invalid student/NIM")
+		return models.TeamsStudent{}, errors.Wrap(err, "possibly invalid student/NIM")
 	}
 
 	person := dataJson.Groups[0].Suggestions[0]
 
-	student := models.Student{
-		Username:  person.DisplayName,
-		Name:      person.DisplayName,
-		FacultyID: "placeholder",
-		MajorID:   nim,
-		Email:     person.ImAddress,
+	NIM := person.UserPrincipalName[:8]
+
+	var phoneNumber = "0"
+
+	if len(person.Phones) > 0 {
+		phoneNumber = person.Phones[len(person.Phones)-1].Number
+	}
+
+	student := models.TeamsStudent{
+		Name:  person.DisplayName,
+		NIM:   NIM,
+		Email: person.UserPrincipalName,
+		Major: constants.NIMToString[NIM[:3]],
+		Phone: phoneNumber,
 	}
 
 	return student, nil

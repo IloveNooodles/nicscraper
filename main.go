@@ -27,9 +27,26 @@ func main() {
 		return
 	}
 
-	s.GetByNIMTeams("13520", "c373fbf2-4b14-441a-849d-bb754bb0d86c")
 	// Start scraping
 	logrus.Infoln("Starting to scrape...")
+	if s.Args.UseTeams {
+		s.StartTeams()
+		data, failed := s.ReceiveTeams()
+
+		// Stop timer
+		elapsed := time.Since(start)
+
+		logrus.Infof("Time elapsed: %.2fs", elapsed.Seconds())
+		logrus.Infof("Failed to fetch: %s", failed)
+
+		// Output filename
+		if s.Args.Format == "json" {
+			file.OutputTeamsJSON(s.Args.OutputFilename, data)
+		} else if s.Args.Format == "csv" {
+			file.OutputTeamsCSV(s.Args.OutputFilename, data)
+		}
+		return
+	}
 	s.Start()
 	data, failed := s.Receive()
 
