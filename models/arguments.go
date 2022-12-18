@@ -18,9 +18,9 @@ type Arguments struct {
 	Prefixes       PrefixesSeparated `arg:"-p,--prefix,required" help:"Prefix of major/faculty (e.g: \"135\", \"165,182\"), can specify \"ALL\" to scrape all registered"`
 	Years          YearsSeparated    `arg:"-y,--years,required" help:"Year with format of YY (e.g: \"18\", \"19,20\")"`
 	Limit          int               `arg:"-l,--limit,required" help:"Set scraping limit"`
-	UseTeams       bool              `arg:"-u,--use-teams" default:"False" help:"Scrapping use teams, Warning: Must provide jwt-token and Cvid"`
-	Jwt            string            `arg:"-j,--jwt" default:"" help:"Set jwt token"`
-	Cvid           string            `arg:"-c,--cvid" default:"" help:"Set cvid token"`
+	UseTeams       bool              `arg:"-u,--use-teams" help:"Scrapping use teams, Warning: Must provide jwt-token and Cvid"`
+	Jwt            string            `arg:"-j,--jwt,env:JWT_TOKEN" help:"Set jwt token via argument, also accept from JWT_TOKEN environment variable"`
+	Cvid           string            `arg:"-c,--cvid,env:CVID_TOKEN" help:"Set cvid token via argument, also accept from CVID_TOKEN via environment variable"`
 	Token          string            `arg:"-t,--token,env:NIC_CI_TOKEN" help:"Set token via argument, also accepts from NIC_CI_TOKEN environment variable"`
 	Format         string            `arg:"-f,--format" default:"json" help:""`
 	OutputFilename string            `arg:"-o,--output" default:"result.json"`

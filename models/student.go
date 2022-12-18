@@ -11,5 +11,7 @@ type Student struct {
 type TeamsStudent struct {
 	Name  string `json:"name" csv:"name"`
 	NIM   string `json:"nim" csv:"nim"`
+	Major string `json:"major" csv:"major"`
 	Email string `json:"email" csv:"email"`
+	Phone string `json:"phone" csv:"phone"`
 }

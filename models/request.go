@@ -1,25 +1,27 @@
 package models
 
-type TeamsResponse struct {
-	Groups          []GroupsTeamsResponse `json:"groups"`
-	Instrumentation interface{}           `json:"instrumentation"`
+type Query struct {
+	QueryString        string `json:"QueryString"`
+	DisplayQueryString string `json:"DisplayQueryString"`
 }
 
-type GroupsTeamsResponse struct {
-	Suggestions []SuggestionsTeamsResponse `json:"suggestions"`
-	Type        string                     `json:"type"`
+type EntityRequests struct {
+	Query      Query      `json:"Query"`
+	EntityType EntityType `json:"EntityType"`
+	Fields     []string   `json:"Fields"`
 }
 
-type SuggestionsTeamsResponse struct {
-	Id                        string   `json:"Id"`
-	DisplayName               string   `json:"DisplayName"`
-	EmailAddresses            []string `json:"EmailAddresses"`
-	JobTitle                  string   `json:"JobTitle"`
-	ImAddress                 string   `json:"ImAddres"`
-	MRI                       string   `json:"MRI"`
-	UserPrincipalName         string   `json:"user_principal_name"`
-	ExternalDirectoryObjectId string   `json:"ExternalDirectoryObjectId"`
-	Text                      string   `json:"Text"`
-	QueryText                 string   `json:"QueryText"`
-	ReferenceId               string   `json:"ReferenceId"`
+type RequestBody struct {
+	EntityRequests []EntityRequests `json:"EntityRequests"`
+	Cvid           string           `json:"Cvid"`
 }
+
+type EntityType string
+
+const (
+	PeopleEntity  EntityType = "People"
+	FileEntity    EntityType = "File"
+	TeamEntity    EntityType = "Team"
+	ChannelEntity EntityType = "Channel"
+	ChatEntity    EntityType = "Chat"
+)
