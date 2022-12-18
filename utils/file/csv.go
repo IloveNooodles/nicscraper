@@ -20,3 +20,17 @@ func OutputCSV(filename string, data []models.Student) error {
 
 	return nil
 }
+
+func OutputTeamsCSV(filename string, data []models.TeamsStudent) error {
+	file, err := csvutil.Marshal(data)
+	if err != nil {
+		return err
+	}
+
+	err = ioutil.WriteFile(filename, file, 0644)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
