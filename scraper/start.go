@@ -92,7 +92,7 @@ func (s Scraper) Start() {
 	}()
 }
 
-func (s Scraper) StartTeams() {
+func (s TeamsScrapper) StartTeams() {
 	progress := Progress{count: 0, limit: s.Args.Limit * len(s.Args.Years.Arr) * len(s.Args.Prefixes.Arr)}
 
 	for _, prefix := range s.Args.Prefixes.Arr {
@@ -139,7 +139,7 @@ func (s Scraper) StartTeams() {
 							continue
 						}
 						notFoundStreak = 0
-						s.TeamsStudent <- student
+						s.Students <- student
 					}
 
 					logrus.Infof("Fetched %s - %s", fmt.Sprintf("%s%03d", prefix, lb), fmt.Sprintf("%s%03d", prefix, ub))

@@ -48,7 +48,7 @@ func (s Scraper) Receive() ([]models.Student, []string) {
 	return result, failed
 }
 
-func (s Scraper) ReceiveTeams() ([]models.TeamsStudent, []string) {
+func (s TeamsScrapper) ReceiveTeams() ([]models.TeamsStudent, []string) {
 	size := len(s.Args.Prefixes.Arr) * len(s.Args.Years.Arr) * s.Args.Limit
 
 	result := make([]models.TeamsStudent, 0)
@@ -58,7 +58,7 @@ func (s Scraper) ReceiveTeams() ([]models.TeamsStudent, []string) {
 
 	for i := 0; i < size; i++ {
 		select {
-		case student := <-s.TeamsStudent:
+		case student := <-s.Students:
 			logrus.Debugf("Received student: %s", student)
 			if !emptyStudent(student) {
 				result = append(result, student)

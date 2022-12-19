@@ -85,7 +85,7 @@ func (s Scraper) GetByNIM(nim string) (models.Student, error) {
 	return student, nil
 }
 
-func (s Scraper) GetByNIMTeams(nim string) (models.TeamsStudent, error) {
+func (s TeamsScrapper) GetByNIMTeams(nim string) (models.TeamsStudent, error) {
 	/* Create http client */
 	client := &http.Client{}
 
@@ -197,5 +197,6 @@ func (s Scraper) GetByNIMTeams(nim string) (models.TeamsStudent, error) {
 		Phone: phoneNumber,
 	}
 
+	/* Input to channel */
 	return student, nil
 }

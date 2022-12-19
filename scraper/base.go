@@ -6,30 +6,46 @@ import (
 )
 
 type Scraper struct {
-	IsVerbose    bool
-	Students     chan models.Student
-	TeamsStudent chan models.TeamsStudent
-	Failed       chan string
-	Args         models.Arguments
+	IsVerbose bool
+	Students  chan models.Student
+	Failed    chan string
+	Args      models.Arguments
+}
+
+type TeamsScrapper struct {
+	IsVerbose bool
+	Students  chan models.TeamsStudent
+	Failed    chan string
+	Args      models.Arguments
 }
 
 func New(args models.Arguments) (*Scraper, error) {
 	scraper := &Scraper{
-		Students:     make(chan models.Student),
-		TeamsStudent: make(chan models.TeamsStudent),
-		Failed:       make(chan string),
-		Args:         args,
+		Students: make(chan models.Student),
+		Failed:   make(chan string),
+		Args:     args,
 	}
 
-	if scraper.Args.UseTeams {
+	if !scraper.IsConnected() {
+		return nil, errors.New("scraper not connected")
+	}
 
-		if scraper.Args.CVID == "" {
-			return nil, errors.New("Please input Cvid Token")
-		}
+	return scraper, nil
+}
 
-		if scraper.Args.JWT == "" {
-			return nil, errors.New("Please input Jwt Token")
-		}
+func NewTeams(args models.Arguments) (*TeamsScrapper, error) {
+	scraper := &TeamsScrapper{
+		Students: make(chan models.TeamsStudent),
+		Failed:   make(chan string),
+		Args:     args,
+	}
+
+	if scraper.Args.CVID == "" {
+		return nil, errors.New("Please input Cvid Token")
+	}
+
+	if scraper.Args.JWT == "" {
+		return nil, errors.New("Please input Jwt Token")
 	}
 
 	if !scraper.IsConnected() {

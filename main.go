@@ -11,6 +11,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+var start time.Time
+
 func main() {
 	json.InitNimToString()
 
@@ -20,11 +22,22 @@ func main() {
 	if args.Verbose {
 		logrus.SetLevel(logrus.DebugLevel)
 	}
+
 	logrus.Debugln(args)
 
 	// Setup timer
-	start := time.Now()
+	start = time.Now()
+
+	if args.UseTeams {
+		useTeams(args)
+	} else {
+		useNic(args)
+	}
+}
+
+func useNic(args models.Arguments) {
 	s, err := scraper.New(args)
+
 	if err != nil {
 		logrus.Fatalf("Error: %s", err.Error())
 		return
@@ -32,24 +45,7 @@ func main() {
 
 	// Start scraping
 	logrus.Infoln("Starting to scrape...")
-	if s.Args.UseTeams {
-		s.StartTeams()
-		data, failed := s.ReceiveTeams()
 
-		// Stop timer
-		elapsed := time.Since(start)
-
-		logrus.Infof("Time elapsed: %.2fs", elapsed.Seconds())
-		logrus.Infof("Failed to fetch: %s", failed)
-
-		// Output filename
-		if s.Args.Format == "json" {
-			file.OutputTeamsJSON(s.Args.OutputFilename, data)
-		} else if s.Args.Format == "csv" {
-			file.OutputTeamsCSV(s.Args.OutputFilename, data)
-		}
-		return
-	}
 	s.Start()
 	data, failed := s.Receive()
 
@@ -65,5 +61,33 @@ func main() {
 	} else if s.Args.Format == "csv" {
 		file.OutputCSV(s.Args.OutputFilename, data)
 	}
+}
 
+func useTeams(args models.Arguments) {
+
+	s, err := scraper.NewTeams(args)
+
+	if err != nil {
+		logrus.Fatalf("Error: %s", err.Error())
+		return
+	}
+
+	// Start scraping
+	logrus.Infoln("Starting to scrape...")
+
+	s.StartTeams()
+	data, failed := s.ReceiveTeams()
+
+	// Stop timer
+	elapsed := time.Since(start)
+
+	logrus.Infof("Time elapsed: %.2fs", elapsed.Seconds())
+	logrus.Infof("Failed to fetch: %s", failed)
+
+	// Output filename
+	if s.Args.Format == "json" {
+		file.OutputTeamsJSON(s.Args.OutputFilename, data)
+	} else if s.Args.Format == "csv" {
+		file.OutputTeamsCSV(s.Args.OutputFilename, data)
+	}
 }
