@@ -11,8 +11,8 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/anaskhan96/soup"
+	j "github.com/mkamadeus/nicscraper/json"
 	"github.com/mkamadeus/nicscraper/models"
-	"github.com/mkamadeus/nicscraper/utils/constants"
 )
 
 func (s Scraper) GetByNIM(nim string) (models.Student, error) {
@@ -176,18 +176,24 @@ func (s Scraper) GetByNIMTeams(nim string) (models.TeamsStudent, error) {
 	person := dataJson.Groups[0].Suggestions[0]
 
 	NIM := person.UserPrincipalName[:8]
+	NIMPrefixes := NIM[:3]
 
-	var phoneNumber = "0"
+	var phoneNumber = "Not found"
 
 	if len(person.Phones) > 0 {
 		phoneNumber = person.Phones[len(person.Phones)-1].Number
 	}
 
+	/* TODO need to reconsider if need exact matching because of weird teams searching algorithm */
+	// if len(s.Args.Prefixes.Arr) == 1 && NIMPrefixes != s.Args.Prefixes.Arr[0] {
+	// 	return models.TeamsStudent{}, nil
+	// }
+
 	student := models.TeamsStudent{
 		Name:  person.DisplayName,
 		NIM:   NIM,
 		Email: person.UserPrincipalName,
-		Major: constants.NIMToString[NIM[:3]],
+		Major: j.NIMToString[NIMPrefixes],
 		Phone: phoneNumber,
 	}
 

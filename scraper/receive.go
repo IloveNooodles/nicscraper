@@ -60,7 +60,9 @@ func (s Scraper) ReceiveTeams() ([]models.TeamsStudent, []string) {
 		select {
 		case student := <-s.TeamsStudent:
 			logrus.Debugf("Received student: %s", student)
-			result = append(result, student)
+			if !emptyStudent(student) {
+				result = append(result, student)
+			}
 		case err := <-s.Failed:
 			logrus.Debugf("Received err: %s", err)
 			failed = append(failed, err)
@@ -80,4 +82,8 @@ func (s Scraper) ReceiveTeams() ([]models.TeamsStudent, []string) {
 	})
 
 	return result, failed
+}
+
+func emptyStudent(s models.TeamsStudent) bool {
+	return s.Email == "" && s.Name == "" && s.Major == "" && s.Phone == "" && s.NIM == ""
 }

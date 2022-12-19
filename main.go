@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/alexflint/go-arg"
+	"github.com/mkamadeus/nicscraper/json"
 	"github.com/mkamadeus/nicscraper/models"
 	"github.com/mkamadeus/nicscraper/scraper"
 	"github.com/mkamadeus/nicscraper/utils/file"
@@ -11,6 +12,8 @@ import (
 )
 
 func main() {
+	json.InitNimToString()
+
 	var args models.Arguments
 	arg.MustParse(&args)
 
