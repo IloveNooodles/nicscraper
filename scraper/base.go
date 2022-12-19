@@ -23,11 +23,11 @@ func New(args models.Arguments) (*Scraper, error) {
 
 	if scraper.Args.UseTeams {
 
-		if scraper.Args.Cvid == "" {
+		if scraper.Args.CVID == "" {
 			return nil, errors.New("Please input Cvid Token")
 		}
 
-		if scraper.Args.Jwt == "" {
+		if scraper.Args.JWT == "" {
 			return nil, errors.New("Please input Jwt Token")
 		}
 	}

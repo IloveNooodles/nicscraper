@@ -114,7 +114,7 @@ func (s Scraper) GetByNIMTeams(nim string) (models.TeamsStudent, error) {
 
 	body := models.RequestBody{
 		EntityRequests: []models.EntityRequests{entityRequests},
-		Cvid:           s.Args.Cvid,
+		Cvid:           s.Args.CVID,
 	}
 
 	json_body, err := json.Marshal(body)
@@ -135,7 +135,7 @@ func (s Scraper) GetByNIMTeams(nim string) (models.TeamsStudent, error) {
 
 	/* Set Headers */
 	request.Header.Set("Content-Type", "application/json")
-	request.Header.Set("Authorization", fmt.Sprintf("Bearer %s", s.Args.Jwt))
+	request.Header.Set("Authorization", fmt.Sprintf("Bearer %s", s.Args.JWT))
 	request.Header.Set("x-client-flights", "enableAutosuggestTopHits,enableAutosuggestTopHitChannels,EnableSelfSuggestion")
 
 	/* Making request */
