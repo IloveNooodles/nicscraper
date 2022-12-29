@@ -184,10 +184,11 @@ func (s TeamsScrapper) GetByNIMTeams(nim string) (models.TeamsStudent, error) {
 		phoneNumber = person.Phones[len(person.Phones)-1].Number
 	}
 
-	/* TODO need to reconsider if need exact matching because of weird teams searching algorithm */
-	// if len(s.Args.Prefixes.Arr) == 1 && NIMPrefixes != s.Args.Prefixes.Arr[0] {
-	// 	return models.TeamsStudent{}, nil
-	// }
+	/* Need to check for each input to have exact matching  because some weird teams searching algorithm */
+
+	if !s.NIMinPrefixes(NIMPrefixes) {
+		return models.TeamsStudent{}, nil
+	}
 
 	student := models.TeamsStudent{
 		Name:  person.DisplayName,
@@ -199,4 +200,14 @@ func (s TeamsScrapper) GetByNIMTeams(nim string) (models.TeamsStudent, error) {
 
 	/* Input to channel */
 	return student, nil
+}
+
+func (s TeamsScrapper) NIMinPrefixes(nimPrefix string) bool {
+	for _, prefix := range s.Args.Prefixes.Arr {
+		if nimPrefix == prefix {
+			return true
+		}
+	}
+
+	return false
 }

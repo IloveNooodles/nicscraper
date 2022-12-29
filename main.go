@@ -1,10 +1,10 @@
 package main
 
 import (
+	"strings"
 	"time"
 
 	"github.com/alexflint/go-arg"
-	"github.com/mkamadeus/nicscraper/json"
 	"github.com/mkamadeus/nicscraper/models"
 	"github.com/mkamadeus/nicscraper/scraper"
 	"github.com/mkamadeus/nicscraper/utils/file"
@@ -14,10 +14,13 @@ import (
 var start time.Time
 
 func main() {
-	json.InitNimToString()
-
 	var args models.Arguments
-	arg.MustParse(&args)
+	res := arg.MustParse(&args)
+
+	logrus.SetFormatter(&logrus.TextFormatter{
+		ForceColors:   true,
+		DisableColors: false,
+	})
 
 	if args.Verbose {
 		logrus.SetLevel(logrus.DebugLevel)
@@ -28,10 +31,14 @@ func main() {
 	// Setup timer
 	start = time.Now()
 
-	if args.UseTeams {
+	method := strings.ToLower(args.Connection)
+
+	if method == "teams" {
 		useTeams(args)
-	} else {
+	} else if method == "nic" {
 		useNic(args)
+	} else {
+		res.Fail("Error: Invalid connection. Available: nic/teams")
 	}
 }
 

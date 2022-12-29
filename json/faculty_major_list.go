@@ -9,6 +9,6 @@ import (
 var files []byte
 var NIMToString map[string]string
 
-func InitNimToString() {
+func init() {
 	json.Unmarshal(files, &NIMToString)
 }
