@@ -47,3 +47,43 @@ func (s Scraper) Receive() ([]models.Student, []string) {
 
 	return result, failed
 }
+
+func (s TeamsScrapper) ReceiveTeams() ([]models.TeamsStudent, []string) {
+	size := len(s.Args.Prefixes.Arr) * len(s.Args.Years.Arr) * s.Args.Limit
+
+	result := make([]models.TeamsStudent, 0)
+	failed := make([]string, 0)
+
+	logrus.Debug(size)
+
+	for i := 0; i < size; i++ {
+		select {
+		case student := <-s.Students:
+			logrus.Debugf("Received student: %s", student)
+			if !emptyStudent(student) {
+				result = append(result, student)
+			}
+		case err := <-s.Failed:
+			logrus.Debugf("Received err: %s", err)
+			failed = append(failed, err)
+		}
+	}
+
+	// Sort output
+	sort.Slice(result[:], func(i, j int) bool {
+		if result[i].NIM == "" && result[j].NIM == "" {
+			return result[i].NIM < result[j].NIM
+		}
+		return result[i].NIM < result[j].NIM
+	})
+
+	sort.Slice(failed[:], func(i, j int) bool {
+		return failed[i] < failed[j]
+	})
+
+	return result, failed
+}
+
+func emptyStudent(s models.TeamsStudent) bool {
+	return s.Email == "" && s.Name == "" && s.Major == "" && s.Phone == "" && s.NIM == ""
+}

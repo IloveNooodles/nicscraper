@@ -4,3 +4,5 @@ nicscraper
 *.csv
 *.json
 *.exe
+
+!faculty_major_list.json

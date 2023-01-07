@@ -50,6 +50,41 @@ You can also provide your token via the `-t`/`--token`.
 ./nicscraper -p 135 -y 18 --token <your-token-here>
 ```
 
+## NEW MODE!! Teams Scrapping
+
+Teams Scrapping use `Microsoft Teams` for the source. To use it, put `-u` flag and provide `JWT` and `CVID` token
+
+JWT and CVID Token can be obtain from your network tab. These are the steps to get them
+
+1. Open `Micorosft Teams` in your browser
+2. Open developer console
+3. Type something in the Microsoft Teams search bar
+4. find the `suggestions?scenario=powerbar` network
+5. Right click it and `copy as fetch`
+6. Then provide JWT and the CVID from there
+
+In \*nix systems:
+
+```bash
+export JWT_TOKEN=<your-token-here>
+export CVID_TOKEN=<your-token-here>
+./nicscraper -p 135 -y 18 -u
+```
+
+In Windows systems:
+
+```cmd
+SET JWT_TOKEN=<your-token-here>
+SET CVID_TOKEN=<your-token-here>
+nicscraper -p 135 -y 18 -u
+```
+
+You can also provide your token via the `-j/--jwt` and `-c/--cvid`.
+
+```bash
+./nicscraper -p 135 -y 18 -u --jwt <your-token-here> --cvid <your-token-here>
+```
+
 ### Using Docker
 
 To run using Docker:
